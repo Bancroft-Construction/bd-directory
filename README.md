@@ -3,23 +3,14 @@
 Bancroft Construction's architect & designer directory, with a business development calendar, a priority
 follow-up list, and last-contact dates picked up automatically from the Jobsite Schedule Board.
 
-It has its **own password**, separate from the schedule board. Everyone signs in with it, then types
-their name. The password is never stored in this repo.
+It uses the **Jobsite Schedule's sign-in**: same password, and signing in on any Bancroft tool signs you
+in to all of them in that browser tab. Everyone then types their name. No password is stored in this repo.
 
 ## One-time setup (Supabase: the schedule board's project)
 
-1. **Create the BD login.** Authentication → Users → Add user → Create new user:
-   - Email: `bd-directory@bancroftconstruction.com` (must match `email` in `config.js`)
-   - Password: the business development password
-   - Tick **Auto Confirm User**
-2. **Create the table.** SQL Editor → paste and run `supabase/setup.sql`.
-3. **Recommended: keep the schedule read-only for the BD login.** SQL Editor → run
-   `supabase/protect-schedule.sql`, then edit a task on the schedule board to check it still saves.
-4. **Turn on GitHub Pages.** Repo → Settings → Pages → Source: *Deploy from a branch*, `main`, `/ (root)`.
-5. **Import the master list.** Open the page, sign in, **Import list**, choose the Excel file, check the
+1. **Create the table.** SQL Editor → paste and run `supabase/setup.sql`.
+2. **Import the master list.** Open the page, sign in, **Import list**, choose the Excel file, check the
    preview, click Import. The list itself is never uploaded to GitHub.
-
-To change the password later: Authentication → Users → the BD user → Reset password / Update user.
 
 ## Using it
 

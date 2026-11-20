@@ -1,11 +1,9 @@
 -- Business Development directory: database setup. Run once in Supabase → SQL Editor
--- (the same Supabase project as the Jobsite Schedule Board).
+-- (the same Supabase project as the Jobsite Schedule Board). Safe to run again.
 --
--- Before running: create the BD login in Authentication → Users → Add user → Create new user,
--- email bd-directory@bancroftconstruction.com (must match config.js), the BD password, Auto Confirm ticked.
---
--- Records are JSON documents keyed "collection/id": contacts/<id>, events/<id>, settings/main.
--- Only the BD login can read or write them. The schedule board's shared login gets nothing here.
+-- Everyone signs in with the schedule board's shared login (scheduler@bancroftconstruction.com,
+-- see config.js). Records are JSON documents keyed "collection/id": contacts/<id>, events/<id>,
+-- settings/main. Only that login can read or write them; visitors who aren't signed in get nothing.
 
 create table if not exists public.bd_docs (
   path        text primary key,
@@ -27,11 +25,11 @@ drop policy if exists "bd login insert" on public.bd_docs;
 drop policy if exists "bd login update" on public.bd_docs;
 drop policy if exists "bd login delete" on public.bd_docs;
 create policy "bd login read"   on public.bd_docs for select to authenticated
-  using (lower(auth.jwt() ->> 'email') = 'bd-directory@bancroftconstruction.com');
+  using (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
 create policy "bd login insert" on public.bd_docs for insert to authenticated
-  with check (lower(auth.jwt() ->> 'email') = 'bd-directory@bancroftconstruction.com');
+  with check (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
 create policy "bd login update" on public.bd_docs for update to authenticated
-  using (lower(auth.jwt() ->> 'email') = 'bd-directory@bancroftconstruction.com')
-  with check (lower(auth.jwt() ->> 'email') = 'bd-directory@bancroftconstruction.com');
+  using (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com')
+  with check (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
 create policy "bd login delete" on public.bd_docs for delete to authenticated
-  using (lower(auth.jwt() ->> 'email') = 'bd-directory@bancroftconstruction.com');
+  using (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
