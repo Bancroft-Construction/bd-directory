@@ -1,0 +1,5 @@
+# Never commit contact lists or exports: this repo is public.
+*.xlsx
+*.xls
+*.csv
+migration/

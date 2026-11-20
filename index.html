@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Business Development Directory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="config.js"></script>
+<script src="/nav.js" defer></script>
+<style>
+:root{
+  --bg:#e7e2de; --panel:#fdf9f6; --panel-2:#f5f0ec; --ink:#25292a; --muted:#6c6763; --line:#dcd5cf;
+  --accent:#8a5d3b; --accent-soft:#efe3d8; --accent-ink:#fdf9f6;
+  --good:#66704f; --good-soft:#e9ebe2; --warn:#94606f; --warn-soft:#f1e6e9; --bad:#b23a3a; --bad-soft:#f4e1de;
+  --star:#c08a2a; --shadow:0 12px 40px rgba(37,41,42,.16);
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1d2021; --panel:#25292a; --panel-2:#212526; --ink:#f3eeea; --muted:#aba6a1; --line:#3a3f40;
+  --accent:#c08a5f; --accent-soft:#3a2c22; --accent-ink:#1d2021;
+  --good:#adb09e; --good-soft:#2e3229; --warn:#cab3b9; --warn-soft:#3a2f33; --bad:#e07070; --bad-soft:#3a2222;
+  --star:#e0b050; --shadow:0 12px 40px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1d2021; --panel:#25292a; --panel-2:#212526; --ink:#f3eeea; --muted:#aba6a1; --line:#3a3f40;
+  --accent:#c08a5f; --accent-soft:#3a2c22; --accent-ink:#1d2021;
+  --good:#adb09e; --good-soft:#2e3229; --warn:#cab3b9; --warn-soft:#3a2f33; --bad:#e07070; --bad-soft:#3a2222;
+  --star:#e0b050; --shadow:0 12px 40px rgba(0,0,0,.5); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+.app{max-width:1500px;margin:0 auto;padding:18px 20px 60px;display:flex;flex-direction:column;gap:16px}
+@media (max-width:600px){.app{padding-inline:16px}}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.hint{color:var(--muted);font-size:13px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
+.brand{display:flex;gap:14px;align-items:flex-start;min-width:0}
+.mark{flex:none;width:12px;align-self:stretch;min-height:52px;background:var(--accent);border-radius:2px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,4vw,36px);line-height:1.05;margin:2px 0 4px;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,input[type=text],input[type=email],input[type=date],input[type=number],input[type=search],input[type=url],input[type=tel],textarea{
+  background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-height:36px;max-width:100%}
+textarea{width:100%;min-height:70px;resize:vertical}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 12px;min-height:36px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.armed{background:var(--bad);color:var(--panel)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--line)}
+.btn.sm{min-height:30px;padding:4px 9px;font-size:13px}
+.btn:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* KPIs */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.kpi{background:var(--panel);padding:12px 14px;min-width:0}
+.kpi .k{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1.1}
+.kpi.alert .v{color:var(--bad)}
+
+/* tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;cursor:pointer;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .n{font-family:var(--f-mono);font-size:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:0 7px;margin-left:6px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px}
+.bar .grow{flex:1 1 220px}
+.bar input[type=search]{width:100%}
+
+/* tables */
+.tw{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--panel-2)}
+td.num,th.num{text-align:right}
+.who{font-weight:600}
+.rowlink{background:none;border:0;padding:0;cursor:pointer;text-align:left;font-weight:600}
+.rowlink:hover{text-decoration:underline}
+.star{background:none;border:0;cursor:pointer;font-size:19px;line-height:1;padding:2px 4px;color:var(--line)}
+.star[aria-pressed=true]{color:var(--star)}
+.star:hover{color:var(--star)}
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:10px;padding:1px 8px;background:var(--panel-2);border:1px solid var(--line);white-space:nowrap}
+.tag.review{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.tag.arch{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.tag.past{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.tag.soon{background:var(--panel-2)}
+.days.over{color:var(--bad);font-weight:600}
+.empty{padding:28px 10px;text-align:center;color:var(--muted)}
+.note{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--muted)}
+.banner{background:var(--bad-soft);color:var(--bad);border-radius:8px;padding:10px 12px;font-size:14px}
+.section+.section{margin-top:26px}
+.section h2{margin-bottom:4px}
+.section>.hint{margin:0 0 10px}
+
+/* dialogs */
+dialog{border:1px solid var(--line);border-radius:12px;padding:0;background:var(--panel);color:var(--ink);box-shadow:var(--shadow);width:min(640px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
+dialog::backdrop{background:rgba(20,22,23,.45)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100vh - 50px)}
+.dlg header{padding:18px 20px 10px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.dlg .body{padding:4px 20px 16px;overflow-y:auto}
+.dlg footer{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.dlg footer .left{margin-right:auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld label,.lab{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.fld.full{grid-column:1/-1}
+.check{display:flex;gap:8px;align-items:center;font-weight:600}
+.lab{margin:18px 0 6px}
+.hist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.hist li{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel-2)}
+.hist .d{font-family:var(--f-mono);font-size:13px;white-space:nowrap;min-width:92px}
+.hist .t{flex:1;min-width:0;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font-family:var(--f-display);font-size:24px}
+.issues{margin:6px 0 0;padding-left:18px;font-size:14px;max-height:200px;overflow:auto}
+
+/* sign-in */
+#gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+#gate form{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:28px 26px;width:min(380px,100%);display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+#gate h1{font-size:28px}
+#gate .mark{width:100%;height:8px;min-height:0;align-self:auto}
+#gate label{display:flex;flex-direction:column;gap:5px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+#gate input{font-size:15px;text-transform:none;letter-spacing:0;font-weight:400}
+#gate .err{color:var(--bad);font-size:14px;min-height:1em;margin:0}
+/* calendar */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:6px 12px;cursor:pointer;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.calhead{font-family:var(--f-display);font-weight:700;font-size:24px;min-width:200px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.legend label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.k-event{--c:var(--accent);--cs:var(--accent-soft)}
+.k-log{--c:var(--good);--cs:var(--good-soft)}
+.k-sched{--c:var(--muted);--cs:var(--panel-2)}
+.sw.k-event,.sw.k-log,.sw.k-sched{background:var(--c)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--line);gap:1px}
+.cal .dow{background:var(--panel-2);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 8px}
+.cal .day{background:var(--panel);min-height:108px;padding:4px 5px 6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;text-align:left;border:0;font:inherit;color:inherit;min-width:0}
+.cal.week .day{min-height:260px}
+.cal .day:hover{background:var(--panel-2)}
+.cal .day.out{background:var(--panel-2);color:var(--muted)}
+.cal .day.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal .dn{font-family:var(--f-mono);font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:4px}
+.cal .today .dn b{background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:0 7px}
+.cal .dn b{font-weight:500}
+.chip{display:block;font-size:12px;line-height:1.3;padding:2px 6px;border-radius:4px;background:var(--cs);border-left:3px solid var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.cal.week .chip{white-space:normal}
+.more{font-size:12px;color:var(--muted);padding-left:4px}
+.dots{display:none;gap:3px;flex-wrap:wrap}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+@media (max-width:700px){
+  .cal.month .chip,.cal.month .more{display:none}.cal.month .dots{display:flex}.cal.month .day{min-height:58px}
+  .cal.week{grid-template-columns:1fr}.cal.week .dow{display:none}.cal.week .day{min-height:0}
+}
+.daylist{margin-top:16px}
+.daylist h3{font-family:var(--f-display);font-size:20px;margin:0 0 8px}
+.ditem{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border:1px solid var(--line);border-left:4px solid var(--c);border-radius:6px;background:var(--panel);margin-bottom:6px;cursor:pointer;width:100%;text-align:left;font:inherit;color:inherit}
+.ditem:hover{background:var(--panel-2)}
+.ditem .tm{font-family:var(--f-mono);font-size:13px;min-width:64px;color:var(--muted)}
+.ditem .what{flex:1;min-width:0}
+.ditem .what b{display:block}
+.who-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.who-chips span{display:inline-flex;gap:4px;align-items:center;background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:2px 4px 2px 10px;font-size:13px;font-weight:600}
+.who-chips button{border:0;background:none;cursor:pointer;color:inherit;padding:0 4px;font-size:14px}
+/* type-ahead lists (Who, Firm, How) */
+.ac{position:relative}
+.ac>input{width:100%}
+.ac-list{position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:5;margin:0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);max-height:260px;overflow-y:auto}
+.ac-list li{padding:7px 10px;border-radius:5px;cursor:pointer;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.ac-list li[aria-selected=true]{background:var(--accent-soft)}
+.ac-list li .hint{text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-list .none{color:var(--muted);cursor:default}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;z-index:200;box-shadow:var(--shadow)}
+@media print{.tabs,.actions,.bar,#toast,.star,.no-print{display:none!important}.panel{border:0;padding:0}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="gate" hidden>
+  <form id="gateForm" autocomplete="on">
+    <span class="mark" aria-hidden="true"></span>
+    <div><div class="eyebrow">Bancroft Construction</div><h1>Business Development</h1></div>
+    <label for="gName">Your name<input type="text" id="gName" autocomplete="name" placeholder="Shown on contacts you log" required></label>
+    <label for="gPass" id="gPassWrap">Password<input type="password" id="gPass" autocomplete="current-password"></label>
+    <p class="hint" style="margin:0">Business development password (not the schedule board’s).</p>
+    <p class="err" id="gErr" role="alert"></p>
+    <button class="btn primary" type="submit" id="gGo">Sign in</button>
+  </form>
+</div>
+
+<div class="app" id="app" hidden>
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div style="min-width:0">
+        <div class="eyebrow">Business development</div>
+        <h1>Architect &amp; Designer Directory</h1>
+        <div class="hint" id="meta"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" data-act="new">+ Add contact</button>
+      <button class="btn" data-act="import">Import list</button>
+      <button class="btn" data-act="export">Export CSV</button>
+      <button class="btn ghost" data-act="signout" id="signOut">Sign out</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+  <div class="summary" id="kpis"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="followup">Priority follow-up<span class="n" id="nFollow"></span></button>
+    <button class="tab" role="tab" data-tab="calendar">Calendar</button>
+    <button class="tab" role="tab" data-tab="directory">Directory<span class="n" id="nDir"></span></button>  </div>
+  <section class="panel" id="view" role="tabpanel"></section>
+</div>
+
+<!-- contact editor -->
+<dialog id="dContact"><form class="dlg" method="dialog" id="fContact">
+  <header><div><div class="eyebrow" id="cEyebrow">Contact</div><h2 id="cTitle">New contact</h2></div><button type="button" class="btn ghost sm" data-act="closeDlg" aria-label="Close">✕</button></header>
+  <div class="body">
+    <div class="grid2">
+      <div class="fld"><label for="c_name">Full name</label><input type="text" id="c_name"></div>
+      <div class="fld"><label for="c_firm">Firm</label><input type="text" id="c_firm"></div>
+      <div class="fld"><label for="c_title">Job title</label><input type="text" id="c_title"></div>
+      <div class="fld"><label for="c_cat">Category</label><select id="c_cat"><option value="">—</option><option>Architect</option><option>Designer</option><option>Other</option></select></div>
+      <div class="fld"><label for="c_email">Email</label><input type="email" id="c_email"></div>
+      <div class="fld"><label for="c_phone">Phone</label><input type="tel" id="c_phone"></div>
+      <div class="fld"><label for="c_web">Website</label><input type="text" id="c_web"></div>
+      <div class="fld"><label for="c_ref">Referral</label><input type="text" id="c_ref"></div>
+      <div class="fld"><label for="c_status">Status</label><select id="c_status"><option>Active</option><option>Needs review</option></select></div>
+      <div class="fld" style="justify-content:flex-end"><label class="check"><input type="checkbox" id="c_pri"> ★ Priority contact</label></div>
+      <div class="fld full"><label for="c_notes">Notes</label><textarea id="c_notes"></textarea></div>
+    </div>
+    <div id="cHistWrap"><div class="lab">Contact history</div><ul class="hist" id="cHist"></ul></div>
+  </div>
+  <footer>
+    <button type="button" class="btn danger left" id="cDel">Delete</button>
+    <button type="button" class="btn" id="cLog">Log contact</button>
+    <button type="button" class="btn" data-act="closeDlg">Cancel</button>
+    <button class="btn primary" value="save" id="cSave">Save</button>
+  </footer>
+</form></dialog>
+<!-- log a contact -->
+<dialog id="dLog"><form class="dlg" method="dialog" id="fLog">
+  <header><div><div class="eyebrow">Log contact</div><h2 id="lTitle"></h2></div><button type="button" class="btn ghost sm" data-act="closeDlg" aria-label="Close">✕</button></header>
+  <div class="body"><div class="grid2">
+    <div class="fld"><label for="l_date">Date</label><input type="date" id="l_date" required></div>
+    <div class="fld"><label for="l_how">How</label><input type="text" id="l_how" placeholder="e.g. Coffee, Email, Site walk"></div>
+    <div class="fld full"><label for="l_note">Note</label><textarea id="l_note" placeholder="What came up, next step…"></textarea></div>
+  </div></div>
+  <footer><button type="button" class="btn" data-act="closeDlg">Cancel</button><button class="btn primary" value="save">Save</button></footer>
+</form></dialog>
+<!-- calendar event -->
+<dialog id="dEvent"><form class="dlg" method="dialog" id="fEvent">
+  <header><div><div class="eyebrow">Calendar</div><h2 id="eTitle">New event</h2></div><button type="button" class="btn ghost sm" data-act="closeDlg" aria-label="Close">✕</button></header>
+  <div class="body"><div class="grid2">
+    <div class="fld full"><label for="e_title">What</label><input type="text" id="e_title" placeholder="e.g. Lunch with Cove Studio, AIA holiday party"></div>
+    <div class="fld"><label for="e_date">Date</label><input type="date" id="e_date" required></div>
+    <div class="fld"><label for="e_time">Time (optional)</label><input type="time" id="e_time"></div>
+    <div class="fld"><label for="e_type">Type</label><select id="e_type"><option>Meeting</option><option>Lunch</option><option>Coffee</option><option>Call</option><option>Industry event</option><option>Site walk</option><option>Presentation</option><option>Other</option></select></div>
+    <div class="fld"><label for="e_loc">Where</label><input type="text" id="e_loc"></div>
+    <div class="fld full"><label for="e_who">Who (from the directory)</label><input type="text" id="e_who" placeholder="Type a name or firm, then pick from the list"><div class="who-chips" id="eWho"></div></div>
+    <div class="fld full"><label for="e_notes">Notes</label><textarea id="e_notes"></textarea></div>
+  </div><p class="hint" style="margin:12px 0 0">Once the date has passed, this counts as contact with everyone listed under Who.</p></div>
+  <footer><button type="button" class="btn danger left" id="eDel">Delete</button><button type="button" class="btn" data-act="closeDlg">Cancel</button><button class="btn primary" value="save">Save</button></footer>
+</form></dialog>
+<!-- import -->
+<dialog id="dImport"><form class="dlg" method="dialog" id="fImport">
+  <header><div><div class="eyebrow">Import</div><h2>Import a contact list</h2></div><button type="button" class="btn ghost sm" data-act="closeDlg" aria-label="Close">✕</button></header>
+  <div class="body">
+    <p class="hint" style="margin-top:0">Excel (.xlsx) or CSV with a header row. Columns are matched by name: Full Name, Company, Job Title, Category, Email, Phone, Priority, Website, Last Contact Date, Communication Medium, Referral, Notes. Existing contacts are matched by email, or by name and firm, and only their blank fields are filled in. Nothing is saved until you click Import.</p>
+    <input type="file" id="iFile" accept=".xlsx,.xls,.csv">
+    <div id="iPreview"></div>
+  </div>
+  <footer><button type="button" class="btn" data-act="closeDlg">Cancel</button><button type="button" class="btn primary" id="iGo" disabled>Import</button></footer>
+</form></dialog>
+
+<div id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ============================================================ data layer
+   Contacts live in Supabase table bd_docs (path "contacts/<id>", plus "settings/main").
+   The jobsite schedule is read, never written: table sched_docs, collections "items" and "projects".
+   ?demo in the address runs on made-up data in memory with no sign-in, for trying things out. */
+const DEMO=/[?&]demo\b/.test(location.search);
+const CFG=window.BD_CONFIG||{};
+const NAME_KEY="jsb.myName"; // shared with the schedule board, so the name carries over
+const getName=()=>{try{return localStorage.getItem(NAME_KEY)||""}catch(e){return ""}};
+const setName=n=>{try{localStorage.setItem(NAME_KEY,n)}catch(e){}};
+const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+const clean=o=>{const c=Object.assign({},o);delete c.id;return c};
+let sb=null;
+
+const supaStore={
+  async pageAll(build){let out=[],from=0;for(;;){const {data,error}=await build().range(from,from+999);if(error)throw error;out=out.concat(data||[]);if(!data||data.length<1000)break;from+=1000}return out},
+  async list(coll){const rows=await this.pageAll(()=>sb.from("bd_docs").select("path,data").eq("coll",coll).order("path"));return rows.map(r=>Object.assign({},r.data,{id:r.path.slice(coll.length+1)}))},
+  async putMany(coll,docs){const now=new Date().toISOString(),by=getName();
+    for(let i=0;i<docs.length;i+=200){const {error}=await sb.from("bd_docs").upsert(docs.slice(i,i+200).map(d=>({path:coll+"/"+d.id,coll,data:clean(d),updated_at:now,updated_by:by})));if(error)throw error}},
+  async del(coll,id){const {error}=await sb.from("bd_docs").delete().eq("path",coll+"/"+id);if(error)throw error},
+  async schedule(){const rows=await this.pageAll(()=>sb.from("sched_docs").select("path,coll,data").in("coll",["items","projects"]).order("path"));
+    const idOf=p=>p.slice(p.lastIndexOf("/")+1);
+    return {items:rows.filter(r=>r.coll==="items").map(r=>Object.assign({},r.data,{id:idOf(r.path)})),projects:rows.filter(r=>r.coll==="projects").map(r=>Object.assign({},r.data,{id:idOf(r.path)}))}}
+};
+
+const demoStore=(()=>{
+  const mem={contacts:new Map(),settings:new Map()};
+  const iso=off=>{const d=new Date();d.setDate(d.getDate()+off);return d.toISOString().slice(0,10)};
+  [{name:"Dana Reyes",firm:"Harbor Line Architects",title:"Principal",category:"Architect",priority:true,touches:[{id:"t1",date:iso(-75),how:"Industry event",note:"Met at awards night",by:"Demo"}]},
+   {name:"Sam Ortiz",firm:"Northfield Interiors",title:"Lead Designer",category:"Designer",priority:true,touches:[]},
+   {name:"Priya Shah",firm:"Cove Studio",title:"Interior Designer",category:"Designer",priority:true,touches:[{id:"t2",date:iso(-9),how:"Coffee",note:"",by:"Demo"}]},
+   {name:"Lee Park",firm:"Granite Ridge Architecture",title:"Architect",category:"Architect",priority:false,touches:[]}
+  ].forEach(c=>{const id=rid();mem.contacts.set(id,Object.assign({status:"Active",email:"",phone:"",website:"",referral:"",notes:"",createdAt:Date.now()},c,{id}))});
+  const idOf=n=>[...mem.contacts.values()].find(c=>c.name===n).id;
+  mem.events=new Map([
+    {title:"Lunch – Cove Studio",date:iso(-3),time:"12:00",type:"Lunch",location:"Blue Bottle",contactIds:[idOf("Priya Shah")]},
+    {title:"AIA holiday party",date:iso(8),time:"18:00",type:"Industry event",location:"Boston",contactIds:[idOf("Dana Reyes"),idOf("Lee Park")]},
+    {title:"Portfolio presentation – Northfield Interiors",date:iso(4),time:"10:00",type:"Presentation",location:"Their office",contactIds:[idOf("Sam Ortiz")]}
+  ].map(e=>{const id=rid();return [id,Object.assign({id,notes:""},e)]}));
+  const sched={projects:[{id:"p1",name:"Sample – Harbor Residence"},{id:"p2",name:"Sample – Maple St Renovation"}],
+    items:[{id:"i1",projectId:"p1",kind:"task",name:"Site walk with architect",sub:"Harbor Line Architects",start:iso(-12),end:iso(-12)},
+      {id:"i2",projectId:"p1",kind:"task",name:"Plumbing - Finish",sub:"Acme Plumbing",start:iso(-5),end:iso(-2)},
+      {id:"i3",projectId:"p2",kind:"task",name:"Design review - kitchen",sub:"Maple Leaf Interior Design",contact:"Jo 555-0100",start:iso(-20),end:iso(-20)},
+      {id:"i4",projectId:"p2",kind:"task",name:"Architect punch walk",sub:"Harbor Line Architects",start:iso(10),end:iso(10)},
+      {id:"i5",projectId:"p2",kind:"task",name:"Lighting walkthrough - Sam Ortiz",sub:"",start:iso(-40),end:iso(-40)}]};
+  const m=c=>mem[c]||(mem[c]=new Map());
+  return {async list(c){return [...m(c).values()].map(x=>JSON.parse(JSON.stringify(x)))},
+    async putMany(c,docs){docs.forEach(d=>m(c).set(d.id,JSON.parse(JSON.stringify(d))))},
+    async del(c,id){m(c).delete(id)},async schedule(){return sched}};
+})();
+const store=DEMO?demoStore:supaStore;
+
+/* ============================================================ dates */
+const pad=n=>String(n).padStart(2,"0");
+const localISO=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const TODAY_ISO=localISO(new Date());
+const DAY=86400000;
+const dnum=s=>{if(!s)return null;const t=Date.parse(s+"T00:00:00Z");return isNaN(t)?null:Math.round(t/DAY)};
+const TODAY=dnum(TODAY_ISO);
+const fmtD=s=>{if(!s)return "—";const t=Date.parse(s+"T00:00:00Z");return isNaN(t)?s:new Date(t).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"})};
+const F=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ============================================================ state */
+const S={contacts:[],events:[],settings:{id:"main",threshold:30,ignored:[]},sched:{items:[],projects:[]},schedErr:"",
+  tab:"followup",q:"",cat:"",filt:"",sort:"firm",rows:[],D:new Map(),matched:new Map(),
+  cal:{mode:"month",anchor:null,sel:null,show:{log:true,sched:true}}};
+try{const c=JSON.parse(localStorage.getItem("bd.cal")||"null");if(c){S.cal.mode=c.mode==="week"?"week":"month";Object.assign(S.cal.show,c.show||{})}}catch(e){}
+try{const t=localStorage.getItem("bd.tab");if(t)S.tab=t}catch(e){}
+
+/* ============================================================ schedule matching
+   A schedule task counts as contact with someone when its name, Sub or Contact field mentions the
+   person's full name or their firm's name. Only dates that have already happened count; upcoming
+   ones are listed but don't change "last contact". */
+const SUFFIX=/[,.]?\s*\b(inc|llc|ltd|co|corp|pc|pllc|llp|aia)\b\.?\s*$/i;
+const GENERIC=new Set(["architect","architects","architecture","design","designs","designer","designers","interiors","interior design","studio","home","homes","group","the"]);
+function firmKey(f){let s=(f||"").trim();for(let i=0;i<3;i++)s=s.replace(SUFFIX,"").trim();return s.replace(/[,.\s]+$/,"")}
+function termRe(t){const e=t.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/\s+/g,"\\s+");return new RegExp("(^|[^a-z0-9])"+e+"(?![a-z0-9])","i")}
+function matchers(c){
+  const n=(c.name||"").trim(),f=firmKey(c.firm);
+  return {name:n.split(/\s+/).length>=2?termRe(n):null, firm:f.length>=4&&!GENERIC.has(f.toLowerCase())?termRe(f):null};
+}
+function schedRows(){
+  const P=new Map(S.sched.projects.map(p=>[p.id,p]));
+  return S.sched.items.filter(i=>i&&i.kind!=="phase"&&(i.name||i.sub)).map(i=>{
+    const st=i.start||"",en=i.end||i.start||"";
+    const date=en&&en<=TODAY_ISO?en:(st&&st<=TODAY_ISO?st:null);
+    return {id:i.id,date,start:st,end:en,name:i.name||"",sub:i.sub||"",contact:i.contact||"",category:i.category||"",
+      project:(P.get(i.projectId)||{}).name||"",text:[i.name,i.sub,i.contact].filter(Boolean).join(" · ")};
+  });
+}
+function compute(){
+  S.rows=schedRows();const D=new Map(),matched=new Map();
+  for(const c of S.contacts){
+    const m=matchers(c),hits=[];
+    if(m.name||m.firm)for(const r of S.rows){
+      const how=m.name&&m.name.test(r.text)?"name":(m.firm&&m.firm.test(r.text)?"firm":null);
+      if(!how)continue;hits.push(Object.assign({how},r));
+      if(!matched.has(r.id))matched.set(r.id,[]);matched.get(r.id).push(c);
+    }
+    let last=null,via="",src="";
+    for(const t of c.touches||[])if(t.date&&t.date<=TODAY_ISO&&(!last||t.date>last)){last=t.date;via=t.how||"Logged";src="log"}
+    for(const ev of S.events)if(ev.date&&ev.date<=TODAY_ISO&&(ev.contactIds||[]).includes(c.id)&&(!last||ev.date>last)){last=ev.date;via=ev.title&&ev.type&&ev.title.toLowerCase().startsWith(ev.type.toLowerCase())?ev.title:[ev.type,ev.title].filter(Boolean).join(": ");src="event"}
+    for(const h of hits)if(h.date&&(!last||h.date>last)){last=h.date;via="Schedule: "+h.name+(h.project?" · "+h.project:"");src="schedule"}
+    D.set(c.id,{last,via,src,days:last?TODAY-dnum(last):null,hits});
+  }
+  S.D=D;S.matched=matched;
+}
+
+/* ============================================================ helpers */
+const thr=()=>Math.max(1,parseInt(S.settings.threshold,10)||30);
+const byId=id=>S.contacts.find(c=>c.id===id);
+const display=c=>c.name||c.firm||"(no name)";
+const due=c=>{const d=S.D.get(c.id);return d.days==null||d.days>=thr()};
+function followups(){return S.contacts.filter(c=>c.priority&&c.status!=="Needs review"&&due(c))
+  .sort((a,b)=>{const x=S.D.get(a.id).days,y=S.D.get(b.id).days;return (y==null?1e9:y)-(x==null?1e9:x)||display(a).localeCompare(display(b))})}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600)}
+function fail(e){console.error(e);const m=(e&&e.message)||String(e);
+  toast(/JWT|row-level|permission|not authorized/i.test(m)?"Your sign-in expired. Reload and sign in again.":/bd_docs/.test(m)&&/exist|schema cache/i.test(m)?"The directory table isn't set up yet (see README).":"Couldn't save: "+m)}
+function catTag(c){return c.category?'<span class="tag'+(c.category==="Architect"?" arch":"")+'">'+esc(c.category)+"</span>":'<span class="hint">—</span>'}
+function lastCell(c){const d=S.D.get(c.id);if(!d.last)return '<span class="hint">Never</span>';
+  return '<span class="mono">'+fmtD(d.last)+'</span><div class="hint">'+esc(d.via)+"</div>"}
+function daysCell(c){const d=S.D.get(c.id);return d.days==null?'<span class="hint">—</span>':'<span class="mono days'+(d.days>=thr()?" over":"")+'">'+d.days+"</span>"}
+
+/* ============================================================ render */
+function render(){
+  compute();
+  if(!["followup","calendar","directory"].includes(S.tab))S.tab="followup";
+  const fu=followups(),review=S.contacts.filter(c=>c.status==="Needs review").length;
+  const recent=S.contacts.filter(c=>{const d=S.D.get(c.id);return d.days!=null&&d.days<30}).length;
+  document.getElementById("meta").textContent=S.contacts.length+" contacts · "+new Set(S.contacts.map(c=>firmKey(c.firm).toLowerCase()).filter(Boolean)).size+" firms"+(DEMO?" · DEMO DATA":"");
+  document.getElementById("kpis").innerHTML=
+    kpi("Contacts",S.contacts.length)+kpi("Priority",S.contacts.filter(c=>c.priority).length)+
+    kpi("Priority due for follow-up",fu.length,fu.length>0)+kpi("Contacted in last 30 days",recent)+kpi("Needs review",review);
+  document.getElementById("nFollow").textContent=fu.length;
+  document.getElementById("nDir").textContent=S.contacts.length;
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",String(t.dataset.tab===S.tab)));
+  const b=document.getElementById("banner");b.hidden=!S.schedErr;b.textContent=S.schedErr;
+  const v=document.getElementById("view");
+  v.innerHTML=S.tab==="directory"?viewDirectory():S.tab==="calendar"?viewCalendar():viewFollow(fu);
+  if(S.tab==="directory"){const q=document.getElementById("q");if(q&&render.focusQ){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  render.focusQ=false;
+}
+const kpi=(k,v,alert)=>'<div class="kpi'+(alert?" alert":"")+'"><div class="k">'+k+'</div><div class="v">'+v+"</div></div>";
+
+function viewFollow(fu){
+  const pri=S.contacts.filter(c=>c.priority).length;
+  let h='<div class="bar"><label class="check" style="font-weight:500">Follow up when it\'s been <input type="number" id="thr" min="1" max="365" value="'+thr()+'" style="width:72px"> days or more</label></div>';
+  if(!pri)return h+'<div class="empty">No one is marked priority yet.<br>Open the <b>Directory</b> tab and click the ☆ next to the people you want to stay in touch with.</div>';
+  if(!fu.length)return h+'<div class="empty">Everyone on the priority list has been contacted in the last '+thr()+' days.</div>';
+  h+='<div class="tw"><table><thead><tr><th>Contact</th><th>Category</th><th>Last contact</th><th class="num">Days since</th><th></th></tr></thead><tbody>';
+  for(const c of fu)h+='<tr><td>'+nameCell(c)+'</td><td>'+catTag(c)+'</td><td>'+lastCell(c)+'</td><td class="num">'+daysCell(c)+'</td><td class="num"><button class="btn sm" data-act="log" data-id="'+c.id+'">Log contact</button></td></tr>';
+  return h+"</tbody></table></div>";
+}
+function nameCell(c){
+  return '<button class="rowlink" data-act="edit" data-id="'+c.id+'">'+esc(display(c))+'</button>'+(c.status==="Needs review"?' <span class="tag review">Needs review</span>':"")+
+    '<div class="hint">'+esc([c.name?c.firm:"",c.title].filter(Boolean).join(" · "))+"</div>";
+}
+function viewDirectory(){
+  const q=S.q.trim().toLowerCase();
+  let list=S.contacts.filter(c=>{
+    if(S.cat==="none"?c.category:S.cat&&c.category!==S.cat)return false;
+    if(S.filt==="priority"&&!c.priority)return false;
+    if(S.filt==="review"&&c.status!=="Needs review")return false;
+    if(S.filt==="never"&&S.D.get(c.id).last)return false;
+    return !q||[c.name,c.firm,c.title,c.email,c.notes,c.referral].some(x=>x&&String(x).toLowerCase().includes(q));
+  });
+  const L=c=>S.D.get(c.id).last||"";
+  const cmp={firm:(a,b)=>(a.firm||"~").localeCompare(b.firm||"~")||display(a).localeCompare(display(b)),
+    name:(a,b)=>display(a).localeCompare(display(b)),
+    oldest:(a,b)=>(L(a)||"0").localeCompare(L(b)||"0")||display(a).localeCompare(display(b)),
+    newest:(a,b)=>L(b).localeCompare(L(a))||display(a).localeCompare(display(b))}[S.sort];
+  list.sort(cmp);
+  const sel=(id,cur,opts)=>'<select id="'+id+'">'+opts.map(([v,l])=>'<option value="'+v+'"'+(v===cur?" selected":"")+">"+l+"</option>").join("")+"</select>";
+  let h='<div class="bar"><div class="grow"><input type="search" id="q" placeholder="Search name, firm, title, email, notes…" value="'+esc(S.q)+'" aria-label="Search"></div>'+
+    sel("fCat",S.cat,[["","All categories"],["Architect","Architects"],["Designer","Designers"],["Other","Other"],["none","No category"]])+
+    sel("fFilt",S.filt,[["","Everyone"],["priority","★ Priority only"],["review","Needs review"],["never","Never contacted"]])+
+    sel("fSort",S.sort,[["firm","Sort: firm"],["name","Sort: name"],["oldest","Sort: longest since contact"],["newest","Sort: most recent contact"]])+
+    '<span class="hint">'+list.length+" shown</span></div>";
+  if(!S.contacts.length)return h+'<div class="empty">The directory is empty. Click <b>Import list</b> to bring in the master list, or <b>+ Add contact</b>.</div>';
+  if(!list.length)return h+'<div class="empty">No contacts match.</div>';
+  h+='<div class="tw"><table><thead><tr><th style="width:34px"><span class="sr" hidden>Priority</span></th><th>Contact</th><th>Category</th><th>Email / phone</th><th>Last contact</th><th class="num">Days</th><th></th></tr></thead><tbody>';
+  for(const c of list){
+    h+='<tr><td><button class="star" data-act="star" data-id="'+c.id+'" aria-pressed="'+!!c.priority+'" title="'+(c.priority?"Priority: click to remove":"Mark as priority")+'">'+(c.priority?"★":"☆")+'</button></td>'+
+      '<td>'+nameCell(c)+'</td><td>'+catTag(c)+'</td><td>'+(c.email?'<a href="mailto:'+esc(c.email)+'">'+esc(c.email)+"</a>":"")+(c.phone?'<div class="hint">'+esc(c.phone)+"</div>":"")+'</td>'+
+      '<td>'+lastCell(c)+'</td><td class="num">'+daysCell(c)+'</td><td class="num"><button class="btn sm" data-act="log" data-id="'+c.id+'">Log</button></td></tr>';
+  }
+  return h+"</tbody></table></div>";
+}
+/* ============================================================ calendar
+   Shows planned events (collection "events"), logged contacts, and Jobsite Schedule tasks that mention
+   a directory contact. A planned event counts as contact with its people once its date has passed. */
+const whoLabel=c=>display(c)+(c.name&&c.firm?" — "+c.firm:"");
+const isoAdd=(s,n)=>new Date((dnum(s)+n)*DAY).toISOString().slice(0,10);
+const dowOf=s=>new Date(dnum(s)*DAY).getUTCDay();
+const dfmt=(s,o)=>new Date(dnum(s)*DAY).toLocaleDateString("en-US",Object.assign({timeZone:"UTC"},o));
+const fmtT=t=>{if(!t)return "";const [h,m]=t.split(":").map(Number);return ((h%12)||12)+(m?":"+pad(m):"")+(h<12?"am":"pm")};
+const monthStart=s=>s.slice(0,8)+"01";
+const shiftMonth=(s,n)=>{let [y,m]=s.split("-").map(Number);m+=n;while(m>12){m-=12;y++}while(m<1){m+=12;y--}return y+"-"+pad(m)+"-01"};
+function calRange(){
+  const a=S.cal.anchor||TODAY_ISO;
+  if(S.cal.mode==="week"){const s=isoAdd(a,-dowOf(a));return {start:s,end:isoAdd(s,6)}}
+  const f=monthStart(a),s=isoAdd(f,-dowOf(f)),last=isoAdd(shiftMonth(f,1),-1);
+  return {start:s,end:isoAdd(last,6-dowOf(last))};
+}
+function calItems(from,to){
+  const out=[],add=(d,o)=>out.push(Object.assign({date:d},o));
+  for(const ev of S.events)if(ev.date>=from&&ev.date<=to)
+    add(ev.date,{k:"event",t:ev.time||"",label:ev.title||ev.type||"Event",act:"calEvent",id:ev.id,
+      sub:[ev.type,ev.location,(ev.contactIds||[]).map(byId).filter(Boolean).map(display).join(", ")].filter(Boolean).join(" · ")});
+  if(S.cal.show.log)for(const c of S.contacts)for(const t of c.touches||[])if(t.date>=from&&t.date<=to)
+    add(t.date,{k:"log",t:"",label:(t.how||"Contact")+" · "+display(c),sub:t.note||"",act:"edit",id:c.id});
+  if(S.cal.show.sched){const R=new Map(S.rows.map(r=>[r.id,r]));
+    for(const [iid,cs] of S.matched){const r=R.get(iid);if(r&&r.start>=from&&r.start<=to)
+      add(r.start,{k:"sched",t:"",label:r.name,sub:cs.map(display).join(", ")+(r.project?" · "+r.project:""),act:"edit",id:cs[0].id})}}
+  const ord={event:0,log:1,sched:2};
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||ord[a.k]-ord[b.k]||(a.t||"99").localeCompare(b.t||"99"));
+}
+function itemBtn(x,lead){return '<button class="ditem k-'+x.k+'" data-act="'+x.act+'" data-id="'+esc(x.id)+'"><span class="tm">'+lead+'</span><span class="what"><b>'+esc(x.label)+"</b>"+(x.sub?'<span class="hint">'+esc(x.sub)+"</span>":"")+"</span></button>"}
+const KIND={event:"Event",log:"Contact",sched:"Schedule"};
+function viewCalendar(){
+  const a=S.cal.anchor||TODAY_ISO,r=calRange(),wk=S.cal.mode==="week",items=calItems(r.start,r.end),by=new Map();
+  items.forEach(i=>{if(!by.has(i.date))by.set(i.date,[]);by.get(i.date).push(i)});
+  const title=wk?dfmt(r.start,{month:"short",day:"numeric"})+(r.start.slice(0,4)!==r.end.slice(0,4)?", "+r.start.slice(0,4):"")+" – "+
+      (r.start.slice(5,7)===r.end.slice(5,7)?Number(r.end.slice(8)):dfmt(r.end,{month:"short",day:"numeric"}))+", "+r.end.slice(0,4)
+    :dfmt(a,{month:"long",year:"numeric"});
+  let h='<div class="bar"><button class="btn sm" data-act="calPrev" aria-label="Previous">‹</button><button class="btn sm" data-act="calToday">Today</button><button class="btn sm" data-act="calNext" aria-label="Next">›</button>'+
+    '<span class="calhead">'+esc(title)+'</span><span class="seg" role="group" aria-label="View"><button data-act="calMode" data-mode="month" aria-pressed="'+!wk+'">Month</button><button data-act="calMode" data-mode="week" aria-pressed="'+wk+'">Week</button></span>'+
+    '<span class="grow"></span><button class="btn sm primary" data-act="newEvent">+ Add event</button></div>'+
+    '<div class="legend" style="margin-bottom:10px"><span style="display:flex;gap:6px;align-items:center"><span class="sw k-event"></span>Planned events</span>'+
+    '<label><input type="checkbox" id="showLog"'+(S.cal.show.log?" checked":"")+'><span class="sw k-log"></span>Logged contacts</label>'+
+    '<label><input type="checkbox" id="showSched"'+(S.cal.show.sched?" checked":"")+'><span class="sw k-sched"></span>Jobsite schedule</label></div>';
+  h+='<div class="cal '+(wk?"week":"month")+'">'+["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>'<div class="dow">'+d+"</div>").join("");
+  const max=wk?999:3,n=dnum(r.end)-dnum(r.start)+1;
+  for(let i=0;i<n;i++){
+    const d=isoAdd(r.start,i),list=by.get(d)||[],out=!wk&&d.slice(0,7)!==a.slice(0,7);
+    h+='<div class="day'+(out?" out":"")+(d===TODAY_ISO?" today":"")+(d===S.cal.sel?" sel":"")+'" data-act="calDay" data-date="'+d+'" role="button" tabindex="0" aria-label="'+dfmt(d,{weekday:"long",month:"long",day:"numeric"})+", "+list.length+(list.length===1?" item":" items")+'">'+
+      '<div class="dn"><b>'+(wk?dfmt(d,{weekday:"short",month:"short",day:"numeric"}):Number(d.slice(8)))+"</b></div>"+
+      list.slice(0,max).map(x=>'<span class="chip k-'+x.k+'" data-act="'+x.act+'" data-id="'+esc(x.id)+'" title="'+esc(x.label+(x.sub?" — "+x.sub:""))+'">'+(x.t?fmtT(x.t)+" ":"")+esc(x.label)+"</span>").join("")+
+      (list.length>max?'<span class="more">+'+(list.length-max)+" more</span>":"")+
+      (list.length?'<span class="dots">'+list.slice(0,6).map(x=>'<i class="k-'+x.k+'"></i>').join("")+"</span>":"")+"</div>";
+  }
+  h+="</div>";
+  const sel=S.cal.sel&&S.cal.sel>=r.start&&S.cal.sel<=r.end?S.cal.sel:null;
+  if(sel){const list=by.get(sel)||[];
+    h+='<div class="daylist"><h3>'+dfmt(sel,{weekday:"long",month:"long",day:"numeric",year:"numeric"})+"</h3>"+
+      (list.length?list.map(x=>itemBtn(x,x.t?fmtT(x.t):KIND[x.k])).join(""):'<p class="hint">Nothing on this day.</p>')+
+      '<button class="btn sm" data-act="newEvent" data-date="'+sel+'">+ Add event on this day</button></div>';
+  }else{
+    const up=calItems(TODAY_ISO,isoAdd(TODAY_ISO,30)).filter(x=>x.k!=="log");
+    h+='<div class="daylist"><h3>Coming up · next 30 days</h3>'+(up.length?up.slice(0,25).map(x=>itemBtn(x,dfmt(x.date,{month:"short",day:"numeric"})+(x.t?"<br>"+fmtT(x.t):""))).join(""):
+      '<p class="hint">Nothing planned. Click a day, then “+ Add event” to plan lunches, meetings and industry events.</p>')+"</div>";
+  }
+  return h;
+}
+function calMove(dir){
+  const a=S.cal.anchor||TODAY_ISO;
+  S.cal.anchor=S.cal.mode==="week"?isoAdd(a,7*dir):shiftMonth(monthStart(a),dir);S.cal.sel=null;render();
+}
+const saveCalPrefs=()=>{try{localStorage.setItem("bd.cal",JSON.stringify({mode:S.cal.mode,show:S.cal.show}))}catch(e){}};
+
+/* event dialog */
+let evEdit=null;
+function openEvent(ev,date){
+  evEdit=ev?JSON.parse(JSON.stringify(ev)):{id:rid(),title:"",date:date||S.cal.sel||TODAY_ISO,time:"",type:"Meeting",location:"",contactIds:[],notes:"",createdAt:Date.now(),createdBy:getName()};
+  evEdit.contactIds=evEdit.contactIds||[];
+  F("eTitle").textContent=ev?(ev.title||"Event"):"New event";
+  F("e_title").value=evEdit.title||"";F("e_date").value=evEdit.date;F("e_time").value=evEdit.time||"";F("e_type").value=evEdit.type||"Meeting";
+  F("e_loc").value=evEdit.location||"";F("e_notes").value=evEdit.notes||"";F("e_who").value="";
+  F("eDel").hidden=!ev;F("eDel").classList.remove("armed");F("eDel").textContent="Delete";
+  renderWho();F("dEvent").showModal();F("e_title").focus();
+}
+function renderWho(){F("eWho").innerHTML=evEdit.contactIds.map(id=>{const c=byId(id);return c?"<span>"+esc(display(c))+'<button type="button" data-act="whoDel" data-id="'+id+'" aria-label="Remove '+esc(display(c))+'">✕</button></span>':""}).join("")}
+function addWho(c){
+  if(!c){const v=F("e_who").value.trim();if(!v)return;const l=v.toLowerCase();
+    c=S.contacts.find(x=>display(x).toLowerCase()===l||whoLabel(x).toLowerCase()===l);
+    if(!c){toast("No one in the directory matches “"+v+"”. Pick a name from the list.");return}}
+  if(!evEdit.contactIds.includes(c.id))evEdit.contactIds.push(c.id);F("e_who").value="";renderWho();F("e_who").focus();
+}
+
+/* ============================================================ type-ahead
+   A small suggestion list under a text box. Used instead of the browser's <datalist>, which doesn't
+   show inside pop-up dialogs in some browsers. source(query) returns [{label, sub, value}]. */
+function typeahead(inp,source,pick){
+  const wrap=document.createElement("div");wrap.className="ac";inp.parentNode.insertBefore(wrap,inp);wrap.appendChild(inp);
+  const ul=document.createElement("ul");ul.className="ac-list";ul.id=inp.id+"_opts";ul.setAttribute("role","listbox");ul.hidden=true;wrap.appendChild(ul);
+  Object.entries({role:"combobox","aria-autocomplete":"list","aria-controls":ul.id,"aria-expanded":"false",autocomplete:"off"}).forEach(([k,v])=>inp.setAttribute(k,v));
+  let opts=[],act=-1;
+  const close=()=>{ul.hidden=true;inp.setAttribute("aria-expanded","false");inp.removeAttribute("aria-activedescendant");act=-1};
+  const mark=()=>{[...ul.children].forEach((li,i)=>li.setAttribute("aria-selected",String(i===act)));
+    if(act>=0){inp.setAttribute("aria-activedescendant",ul.id+"_"+act);ul.children[act].scrollIntoView({block:"nearest"})}};
+  const open=()=>{
+    const q=inp.value.trim();opts=source(q);act=opts.length?0:-1;
+    if(!opts.length){if(q&&source.emptyText){ul.innerHTML='<li class="none">'+esc(source.emptyText(q))+"</li>";ul.hidden=false}else close();return}
+    ul.innerHTML=opts.map((o,i)=>'<li role="option" id="'+ul.id+"_"+i+'" data-i="'+i+'"><span>'+esc(o.label)+"</span>"+(o.sub?'<span class="hint">'+esc(o.sub)+"</span>":"")+"</li>").join("");
+    ul.hidden=false;inp.setAttribute("aria-expanded","true");mark();
+  };
+  const choose=i=>{const o=opts[i];close();if(o)pick(o)};
+  inp.addEventListener("input",open);
+  inp.addEventListener("focus",()=>{if(source.onFocus||inp.value.trim())open()});
+  inp.addEventListener("blur",()=>setTimeout(close,120));
+  inp.addEventListener("keydown",e=>{
+    if(ul.hidden||!opts.length){if(e.key==="ArrowDown"){e.preventDefault();open()}return}
+    if(e.key==="ArrowDown"){e.preventDefault();act=(act+1)%opts.length;mark()}
+    else if(e.key==="ArrowUp"){e.preventDefault();act=(act-1+opts.length)%opts.length;mark()}
+    else if(e.key==="Enter"||e.key==="Tab"&&inp.value.trim()){if(act>=0){e.preventDefault();e.stopImmediatePropagation();choose(act)}}
+    else if(e.key==="Escape"){e.preventDefault();e.stopPropagation();close()}
+  });
+  ul.addEventListener("mousedown",e=>{const li=e.target.closest("li[data-i]");e.preventDefault();if(li)choose(+li.dataset.i)});
+}
+const norm=s=>(s||"").toLowerCase();
+function rank(list,q,keyFns){ // starts-with matches first, then contains; matches any word start too
+  const l=norm(q);if(!l)return list.slice();
+  const score=x=>{let best=9;for(const f of keyFns){const v=norm(f(x));if(!v)continue;
+    if(v.startsWith(l))best=Math.min(best,0);else if(v.split(/[\s\-&/,.]+/).some(w=>w.startsWith(l)))best=Math.min(best,1);else if(v.includes(l))best=Math.min(best,2)}return best};
+  return list.map(x=>[score(x),x]).filter(p=>p[0]<9).sort((a,b)=>a[0]-b[0]).map(p=>p[1]);
+}
+// Who: people (and firm entries) in the directory
+const whoSource=q=>{if(!q)return [];
+  return rank(S.contacts.filter(c=>!evEdit||!evEdit.contactIds.includes(c.id)),q,[c=>c.name,c=>c.firm]).slice(0,10)
+    .map(c=>({label:display(c),sub:c.name?[c.firm,c.category].filter(Boolean).join(" · "):"Firm",value:c}))};
+whoSource.emptyText=q=>"No one in the directory matches “"+q+"”";
+typeahead(F("e_who"),whoSource,o=>addWho(o.value));
+F("e_who").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addWho()}});
+// Firm: firms already in the directory (any new name can still be typed)
+typeahead(F("c_firm"),q=>{if(!q)return [];const firms=[...new Set(S.contacts.map(c=>c.firm).filter(Boolean))];
+  return rank(firms,q,[f=>f]).filter(f=>norm(f)!==norm(q)).slice(0,8).map(f=>({label:f,sub:S.contacts.filter(c=>c.firm===f).length+" in directory",value:f}))},o=>{F("c_firm").value=o.value});
+// How: common ways of getting in touch (any other text can still be typed)
+const HOW=["Email","Phone call","Text","Coffee","Lunch","Dinner","Meeting","Site walk","Zoom call","Industry event","In person","Presentation"];
+const howSource=q=>rank(HOW,q,[h=>h]).filter(h=>norm(h)!==norm(q)).map(h=>({label:h,value:h}));
+howSource.onFocus=true;
+typeahead(F("l_how"),howSource,o=>{F("l_how").value=o.value});
+F("fEvent").addEventListener("submit",async e=>{
+  if(e.submitter&&e.submitter.value!=="save")return;
+  Object.assign(evEdit,{title:F("e_title").value.trim(),date:F("e_date").value,time:F("e_time").value,type:F("e_type").value,location:F("e_loc").value.trim(),notes:F("e_notes").value,updatedAt:Date.now(),updatedBy:getName()});
+  if(!evEdit.date){e.preventDefault();toast("Pick a date.");return}
+  if(!evEdit.title)evEdit.title=evEdit.type+(evEdit.contactIds.length?" – "+evEdit.contactIds.map(id=>display(byId(id)||{})).join(", "):"");
+  try{await store.putMany("events",[evEdit]);const i=S.events.findIndex(x=>x.id===evEdit.id);if(i>=0)S.events[i]=evEdit;else S.events.push(evEdit);
+    S.cal.sel=evEdit.date;if(S.tab==="calendar"){const r=calRange();if(evEdit.date<r.start||evEdit.date>r.end)S.cal.anchor=evEdit.date}render();toast("Event saved")}catch(er){fail(er)}
+});
+F("eDel").addEventListener("click",async()=>{
+  const b=F("eDel");if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Click again to delete";return}
+  try{await store.del("events",evEdit.id);S.events=S.events.filter(x=>x.id!==evEdit.id);F("dEvent").close();render();toast("Event deleted")}catch(er){fail(er)}
+});
+
+/* ============================================================ saving */
+async function saveContacts(list){await store.putMany("contacts",list);list.forEach(c=>{const i=S.contacts.findIndex(x=>x.id===c.id);if(i>=0)S.contacts[i]=c;else S.contacts.push(c)});render()}
+async function saveSettings(){await store.putMany("settings",[S.settings])}
+
+/* contact dialog */
+let editing=null;
+function openContact(c,preset){
+  editing=c?JSON.parse(JSON.stringify(c)):Object.assign({id:rid(),name:"",firm:"",title:"",category:"",email:"",phone:"",website:"",referral:"",notes:"",priority:false,status:"Active",touches:[],createdAt:Date.now()},preset||{});
+  F("cTitle").textContent=c?display(c):"New contact";F("cEyebrow").textContent=c?(c.category||"Contact"):"Add contact";
+  [["c_name","name"],["c_firm","firm"],["c_title","title"],["c_cat","category"],["c_email","email"],["c_phone","phone"],["c_web","website"],["c_ref","referral"],["c_status","status"],["c_notes","notes"]].forEach(([f,k])=>F(f).value=editing[k]||(k==="status"?"Active":""));
+  F("c_pri").checked=!!editing.priority;
+  F("cDel").hidden=!c;F("cDel").classList.remove("armed");F("cDel").textContent="Delete";F("cLog").hidden=!c;
+  renderHist();F("dContact").showModal();(c?F("c_notes"):F("c_name")).focus();
+}
+function renderHist(){
+  const d=S.D.get(editing.id),ev=[];
+  (editing.touches||[]).forEach(t=>ev.push({date:t.date,html:"<b>"+esc(t.how||"Contact")+"</b>"+(t.note?" · "+esc(t.note):"")+(t.by?'<div class="hint">Logged by '+esc(t.by)+"</div>":""),del:t.id}));
+  S.events.filter(x=>(x.contactIds||[]).includes(editing.id)).forEach(x=>ev.push({date:x.date,html:"<b>"+esc(x.type||"Event")+"</b> · "+esc(x.title)+(x.location?" · "+esc(x.location):"")+'<div class="hint">Calendar'+(x.date>TODAY_ISO?" · planned":"")+"</div>"}));
+  if(d)d.hits.forEach(h=>ev.push({date:h.start,html:"<b>Schedule</b> · "+esc(h.name)+(h.project?" · "+esc(h.project):"")+'<div class="hint">Matched by '+h.how+(h.date?"":" · upcoming")+"</div>"}));
+  ev.sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  F("cHistWrap").hidden=!byId(editing.id);
+  F("cHist").innerHTML=ev.length?ev.map(e=>'<li><span class="d">'+fmtD(e.date)+'</span><span class="t">'+e.html+"</span>"+(e.del?'<button type="button" class="btn ghost sm" data-act="delTouch" data-tid="'+esc(e.del)+'" aria-label="Remove">✕</button>':"")+"</li>").join(""):'<li><span class="t hint">No contact logged yet.</span></li>';
+}
+F("fContact").addEventListener("submit",async e=>{
+  if(e.submitter&&e.submitter.value!=="save")return;
+  const c=editing;
+  Object.assign(c,{name:F("c_name").value.trim(),firm:F("c_firm").value.trim(),title:F("c_title").value.trim(),category:F("c_cat").value,email:F("c_email").value.trim(),
+    phone:F("c_phone").value.trim(),website:F("c_web").value.trim(),referral:F("c_ref").value.trim(),status:F("c_status").value,notes:F("c_notes").value,priority:F("c_pri").checked,updatedAt:Date.now()});
+  if(!c.name&&!c.firm){e.preventDefault();toast("Enter a name or a firm.");return}
+  try{await saveContacts([c]);toast("Saved")}catch(er){fail(er)}
+});
+F("cDel").addEventListener("click",async()=>{
+  const b=F("cDel");if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Click again to delete";return}
+  try{await store.del("contacts",editing.id);S.contacts=S.contacts.filter(c=>c.id!==editing.id);F("dContact").close();render();toast("Contact deleted")}catch(er){fail(er)}
+});
+F("cLog").addEventListener("click",()=>{const id=editing.id;F("dContact").close();openLog(id)});
+
+/* log dialog */
+let logFor=null;
+function openLog(id){logFor=id;const c=byId(id);F("lTitle").textContent=display(c);F("l_date").value=TODAY_ISO;F("l_how").value="";F("l_note").value="";F("dLog").showModal();F("l_how").focus()}
+F("fLog").addEventListener("submit",async e=>{
+  if(e.submitter&&e.submitter.value!=="save")return;
+  const c=JSON.parse(JSON.stringify(byId(logFor)));if(!F("l_date").value){e.preventDefault();return}
+  c.touches=(c.touches||[]).concat([{id:rid(),date:F("l_date").value,how:F("l_how").value.trim(),note:F("l_note").value.trim(),by:getName(),at:Date.now()}]);
+  if(c.status==="Needs review")c.status="Active";
+  try{await saveContacts([c]);toast("Contact logged")}catch(er){fail(er)}
+});
+
+/* ============================================================ import */
+const HMAP=[["lastDate",/last\s*contact/i],["name",/^(full\s*)?name$|^contact(\s*name)?$/i],["firm",/^(company|firm)(\s*name)?$/i],["title",/title/i],["category",/^(category|role|type)$/i],
+  ["email",/e-?mail/i],["phone",/phone|cell|mobile/i],["priority",/priority/i],["website",/web/i],["how",/medium|method|how/i],["referral",/referr/i],["notes",/^notes?$/i]];
+let pending=null;
+function cellDate(v){
+  if(v==null||v==="")return {date:""};
+  if(typeof v==="number"&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*DAY));return {date:d.toISOString().slice(0,10)}}
+  if(v instanceof Date&&!isNaN(v))return {date:localISO(v)};
+  const s=String(v).trim(),t=Date.parse(s);
+  if(/\d/.test(s)&&!isNaN(t)){const d=new Date(t);if(d.getFullYear()>1990&&d.getFullYear()<2100)return {date:localISO(d)}}
+  return {date:"",bad:s};
+}
+const keyEmail=c=>(c.email||"").trim().toLowerCase();
+const keyNF=c=>((c.name||"").trim()+"|"+firmKey(c.firm)).toLowerCase().replace(/\s+/g," ");
+function parseSheet(rows){
+  let hi=rows.findIndex((r,i)=>i<15&&r.some(v=>/full\s*name|^name$|company|firm/i.test(String(v).trim())));
+  if(hi<0)throw new Error("Couldn't find a header row with Name or Company.");
+  const hdr=rows[hi].map(v=>String(v).trim()),col={};
+  hdr.forEach((h,i)=>{if(!h)return;for(const [k,re] of HMAP)if(col[k]==null&&re.test(h)){col[k]=i;break}});
+  const out={add:[],upd:[],skipped:0,dups:0,noCat:[],firmOnly:0,bad:[],cols:Object.keys(col)};
+  const byE=new Map(),byNF=new Map();S.contacts.forEach(c=>{if(keyEmail(c))byE.set(keyEmail(c),c);byNF.set(keyNF(c),c)});
+  const seen=new Map();
+  rows.slice(hi+1).forEach((r,ix)=>{
+    const g=k=>col[k]==null?"":r[col[k]];const s=k=>String(g(k)==null?"":g(k)).trim();
+    const rec={name:s("name"),firm:s("firm"),title:s("title"),email:s("email"),phone:s("phone"),website:s("website"),referral:s("referral"),notes:s("notes")};
+    if(!rec.name&&!rec.firm){out.skipped++;return}
+    const cat=s("category");rec.category=/^arch/i.test(cat)?"Architect":/design|interior/i.test(cat)?"Designer":cat?"Other":"";
+    if(cat&&rec.category==="Other")rec.notes=[rec.notes,"Category on list: "+cat].filter(Boolean).join("\n");
+    rec.priority=/^(y|yes|x|true|1|high|priority|★|✓)$/i.test(s("priority"));
+    const dt=cellDate(g("lastDate")),how=s("how"),rowNo=hi+ix+2;
+    rec.touches=[];
+    if(dt.date)rec.touches.push({id:rid(),date:dt.date,how:how||"From master list",note:"",by:"Import"});
+    else{if(dt.bad){out.bad.push({row:rowNo,who:rec.name||rec.firm,val:dt.bad});rec.notes=[rec.notes,"Last contact on list: "+dt.bad].filter(Boolean).join("\n")}
+      if(how)rec.notes=[rec.notes,"Contacted via: "+how].filter(Boolean).join("\n")}
+    if(!rec.category)out.noCat.push({row:rowNo,who:rec.name||rec.firm});
+    if(!rec.name)out.firmOnly++;
+    const k=keyEmail(rec)||keyNF(rec);
+    if(seen.has(k)){out.dups++;const o=seen.get(k);o.touches=o.touches.concat(rec.touches);for(const f in rec)if(!o[f]&&rec[f])o[f]=rec[f];return}
+    const ex=(keyEmail(rec)&&byE.get(keyEmail(rec)))||byNF.get(keyNF(rec));
+    if(ex){seen.set(k,rec);out.upd.push({ex,rec})}else{seen.set(k,rec);out.add.push(rec)}
+  });
+  return out;
+}
+function buildImport(p){
+  const docs=[];
+  p.add.forEach(r=>docs.push(Object.assign({id:rid(),status:"Active",createdAt:Date.now(),source:"Master list"},r)));
+  p.upd.forEach(({ex,rec})=>{const c=JSON.parse(JSON.stringify(ex));let ch=false;
+    ["name","firm","title","category","email","phone","website","referral"].forEach(f=>{if(!c[f]&&rec[f]){c[f]=rec[f];ch=true}});
+    if(rec.priority&&!c.priority){c.priority=true;ch=true}
+    if(rec.notes&&!(c.notes||"").includes(rec.notes)){c.notes=[c.notes,rec.notes].filter(Boolean).join("\n");ch=true}
+    const have=new Set((c.touches||[]).map(t=>t.date+"|"+t.how));
+    rec.touches.forEach(t=>{if(!have.has(t.date+"|"+t.how)){c.touches=(c.touches||[]).concat([t]);ch=true}});
+    if(ch)docs.push(c)});
+  return docs;
+}
+F("iFile").addEventListener("change",async()=>{
+  const f=F("iFile").files[0],box=F("iPreview");pending=null;F("iGo").disabled=true;if(!f){box.innerHTML="";return}
+  try{
+    if(!window.XLSX)throw new Error("The spreadsheet reader didn't load. Check your connection and reload.");
+    const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:false});
+    let p=null,sheet="";
+    for(const n of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:""});try{const q=parseSheet(rows);if(!p||q.add.length+q.upd.length>p.add.length+p.upd.length){p=q;sheet=n}}catch(e){}}
+    if(!p)throw new Error("Couldn't find a sheet with a Name or Company column.");
+    pending=buildImport(p);
+    const li=(a,fn)=>a.length?'<ul class="issues">'+a.slice(0,60).map(fn).join("")+(a.length>60?"<li>… and "+(a.length-60)+" more</li>":"")+"</ul>":"";
+    box.innerHTML='<div class="lab">Preview · sheet “'+esc(sheet)+'”</div><div class="stats">'+
+      '<div class="stat"><b>'+p.add.length+'</b>new contacts</div><div class="stat"><b>'+pending.filter(d=>byId(d.id)).length+'</b>existing to update</div>'+
+      '<div class="stat"><b>'+p.add.reduce((n,r)=>n+r.touches.length,0)+'</b>contact dates</div><div class="stat"><b>'+p.skipped+'</b>blank rows skipped</div></div>'+
+      (p.dups?'<p class="hint">'+p.dups+" duplicate rows on the list were merged.</p>":"")+
+      (p.firmOnly?'<p class="hint">'+p.firmOnly+" rows have a firm but no person’s name; they’re imported as firm entries.</p>":"")+
+      (p.noCat.length?'<div class="lab">No category ('+p.noCat.length+')</div><p class="hint" style="margin:0">Imported without a category. Set one later in the Directory (filter “No category”).</p>'+li(p.noCat,x=>"<li>Row "+x.row+": "+esc(x.who)+"</li>"):"")+
+      (p.bad.length?'<div class="lab">Last-contact values that aren’t dates ('+p.bad.length+')</div><p class="hint" style="margin:0">Kept in the contact’s notes.</p>'+li(p.bad,x=>"<li>Row "+x.row+": "+esc(x.who)+" — “"+esc(x.val)+"”</li>"):"");
+    F("iGo").disabled=!pending.length;F("iGo").textContent=pending.length?"Import "+pending.length+" contacts":"Nothing to import";
+  }catch(e){box.innerHTML='<p class="banner">'+esc(e.message||e)+"</p>"}
+});
+F("iGo").addEventListener("click",async()=>{
+  if(!pending)return;const b=F("iGo");b.disabled=true;b.textContent="Importing…";
+  try{await saveContacts(pending);F("dImport").close();toast("Imported "+pending.length+" contacts");pending=null}catch(er){fail(er);b.disabled=false;b.textContent="Try again"}
+});
+
+/* ============================================================ export */
+function exportCsv(){
+  const head=["Full Name","Company","Job Title","Category","Email","Phone","Website","Priority","Status","Last Contact Date","Days Since Contact","Last Contact Via","Referral","Notes"];
+  const q=v=>{const s=String(v==null?"":v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const lines=[head.join(",")].concat(S.contacts.slice().sort((a,b)=>(a.firm||"").localeCompare(b.firm||"")).map(c=>{const d=S.D.get(c.id);
+    return [c.name,c.firm,c.title,c.category,c.email,c.phone,c.website,c.priority?"Yes":"",c.status,d.last||"",d.days==null?"":d.days,d.via,c.referral,c.notes].map(q).join(",")}));
+  const blob=new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="architects-designers-"+TODAY_ISO+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+/* ============================================================ events */
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("[data-act],[data-tab]");if(!t)return;
+  if(t.dataset.tab){S.tab=t.dataset.tab;try{localStorage.setItem("bd.tab",S.tab)}catch(er){}render();return}
+  const id=t.dataset.id,c=id&&byId(id);
+  switch(t.dataset.act){
+    case "new":openContact(null);break;
+    case "closeDlg":{const d=t.closest("dialog");if(d)d.close();break}
+    case "calPrev":calMove(-1);break;
+    case "calNext":calMove(1);break;
+    case "calToday":S.cal.anchor=TODAY_ISO;S.cal.sel=TODAY_ISO;render();break;
+    case "calMode":S.cal.mode=t.dataset.mode;S.cal.anchor=S.cal.sel||S.cal.anchor;saveCalPrefs();render();break;
+    case "calDay":S.cal.sel=S.cal.sel===t.dataset.date?null:t.dataset.date;render();break;
+    case "calEvent":{const ev=S.events.find(x=>x.id===id);if(ev)openEvent(ev);break}
+    case "newEvent":openEvent(null,t.dataset.date);break;
+    case "whoDel":evEdit.contactIds=evEdit.contactIds.filter(x=>x!==id);renderWho();break;
+    case "edit":if(c)openContact(c);break;
+    case "log":if(c)openLog(id);break;
+    case "import":pending=null;F("iFile").value="";F("iPreview").innerHTML="";F("iGo").disabled=true;F("iGo").textContent="Import";F("dImport").showModal();break;
+    case "export":exportCsv();break;
+    case "signout":if(sb)await sb.auth.signOut();location.reload();break;
+    case "star":{const n=JSON.parse(JSON.stringify(c));n.priority=!n.priority;try{await saveContacts([n])}catch(er){fail(er)}break}
+    case "delTouch":{editing.touches=(editing.touches||[]).filter(x=>x.id!==t.dataset.tid);renderHist();toast("Removed. Click Save to keep the change.");break}
+  }
+});
+document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches('.day[data-act="calDay"]')){e.preventDefault();e.target.click()}
+});
+document.addEventListener("input",e=>{
+  if(e.target.id==="q"){S.q=e.target.value;render.focusQ=true;render()}
+});
+document.addEventListener("change",async e=>{
+  const id=e.target.id;
+  if(id==="fCat"){S.cat=e.target.value;render()}else if(id==="fFilt"){S.filt=e.target.value;render()}else if(id==="fSort"){S.sort=e.target.value;render()}
+  else if(id==="showLog"||id==="showSched"){S.cal.show[id==="showLog"?"log":"sched"]=e.target.checked;saveCalPrefs();render()}
+  else if(id==="thr"){S.settings.threshold=Math.max(1,parseInt(e.target.value,10)||30);try{await saveSettings();render()}catch(er){fail(er)}}
+});
+
+/* ============================================================ start-up & sign-in */
+async function load(){
+  const [contacts,settings,events]=await Promise.all([store.list("contacts"),store.list("settings"),store.list("events")]);
+  S.contacts=contacts.map(c=>Object.assign({status:"Active",touches:[]},c));
+  S.events=events.map(e=>Object.assign({contactIds:[]},e));
+  const st=settings.find(s=>s.id==="main");if(st)S.settings=Object.assign(S.settings,st);
+  try{S.sched=await store.schedule();S.schedErr=""}catch(e){console.error(e);S.schedErr="Couldn't read the Jobsite Schedule, so last-contact dates only include logged contacts right now."}
+  F("app").hidden=false;render();
+}
+async function start(){
+  try{await load()}catch(e){console.error(e);F("app").hidden=false;F("view").innerHTML='<div class="banner">'+
+    (/bd_docs/.test(e.message||"")?"The directory’s database table isn’t set up yet. Run supabase/setup.sql in the Supabase SQL Editor (see README).":"Couldn’t load the directory: "+esc(e.message||e))+"</div>"}
+}
+document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&!F("app").hidden&&!document.querySelector("dialog[open]")){try{await load()}catch(e){}}});
+
+if(DEMO){F("signOut").hidden=true;start()}
+else if(!window.supabase||!CFG.url){F("gate").hidden=false;F("gErr").textContent="This page isn’t connected to its database. Check config.js.";F("gGo").disabled=true}
+else{
+  // Its own login and its own session key, so a schedule-board sign-in never opens this page.
+  // The sign-in lasts while the tab is open; closing the tab or browser signs out.
+  sb=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"bd-auth",storage:window.sessionStorage}});
+  (async()=>{
+    F("gName").value=getName();
+    const {data}=await sb.auth.getSession();
+    if(data&&data.session&&getName()){start();return}
+    if(data&&data.session)F("gPassWrap").hidden=true;
+    F("gate").hidden=false;(getName()?F("gPass"):F("gName")).focus();
+  })();
+  F("gateForm").addEventListener("submit",async e=>{
+    e.preventDefault();const name=F("gName").value.trim(),pass=F("gPass").value,err=F("gErr"),go=F("gGo");
+    if(!name){err.textContent="Enter your name.";return}
+    setName(name);err.textContent="";
+    const {data}=await sb.auth.getSession();
+    if(!(data&&data.session)){
+      if(!pass){err.textContent="Enter the password.";return}
+      go.disabled=true;go.textContent="Signing in…";
+      const {error}=await sb.auth.signInWithPassword({email:CFG.email,password:pass});
+      go.disabled=false;go.textContent="Sign in";
+      if(error){err.textContent=/invalid/i.test(error.message)?"That password isn’t right.":"Couldn’t sign in: "+error.message;F("gPass").select();return}
+    }
+    F("gPass").value="";F("gate").hidden=true;start();
+  });
+}
+})();
+</script>
+</body>
+</html>
