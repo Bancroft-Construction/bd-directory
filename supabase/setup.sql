@@ -1,7 +1,7 @@
 -- Business Development directory: database setup. Run once in Supabase → SQL Editor
 -- (the same Supabase project as the Jobsite Schedule Board). Safe to run again.
 --
--- Everyone signs in with the schedule board's shared login (scheduler@bancroftconstruction.com,
+-- Everyone signs in with the Business Development login (bd@bancroftconstruction.com,
 -- see config.js). Records are JSON documents keyed "collection/id": contacts/<id>, events/<id>,
 -- settings/main. Only that login can read or write them; visitors who aren't signed in get nothing.
 
@@ -25,11 +25,11 @@ drop policy if exists "bd login insert" on public.bd_docs;
 drop policy if exists "bd login update" on public.bd_docs;
 drop policy if exists "bd login delete" on public.bd_docs;
 create policy "bd login read"   on public.bd_docs for select to authenticated
-  using (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
+  using (lower(auth.jwt() ->> 'email') = 'bd@bancroftconstruction.com');
 create policy "bd login insert" on public.bd_docs for insert to authenticated
-  with check (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
+  with check (lower(auth.jwt() ->> 'email') = 'bd@bancroftconstruction.com');
 create policy "bd login update" on public.bd_docs for update to authenticated
-  using (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com')
-  with check (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
+  using (lower(auth.jwt() ->> 'email') = 'bd@bancroftconstruction.com')
+  with check (lower(auth.jwt() ->> 'email') = 'bd@bancroftconstruction.com');
 create policy "bd login delete" on public.bd_docs for delete to authenticated
-  using (lower(auth.jwt() ->> 'email') = 'scheduler@bancroftconstruction.com');
+  using (lower(auth.jwt() ->> 'email') = 'bd@bancroftconstruction.com');

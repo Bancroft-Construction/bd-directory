@@ -7,16 +7,18 @@ follow-up list, and last-contact dates picked up from the Jobsite Schedule.
 - Hosting: GitHub Pages from the `main` branch. A push to `main` goes live within a minute or two;
   there is no staging copy. Try changes locally first with `?demo` (see below).
 - One file, `index.html` (HTML, CSS and JavaScript). No build step. `config.js` holds the Supabase
-  connection: the schedule board's Supabase project and the schedule board's shared login
-  (`scheduler@bancroftconstruction.com`). Its session is stored under `jsb-auth` in sessionStorage,
-  the same key the other tools use, so one sign-in covers every tool in that tab. Never put the
-  password in the repo.
+  connection: the schedule board's Supabase project and the directory's own login
+  (`bd@bancroftconstruction.com`), separate from the schedule's shared login so only BD people get in.
+  Its session is stored under `bd-auth` in sessionStorage (not the other tools' `jsb-auth`), and a
+  session for any other login is signed out. Never put the password in the repo.
+- The BD login can read the schedule but never change it: the write policies in
+  `jobsite-schedule/supabase/setup.sql` exclude it.
 
 ## Data
 
 - Records are in Supabase table `public.bd_docs`, created by `supabase/setup.sql`: `contacts/<id>`,
   `events/<id>` (calendar: title, date, time, type, location, contactIds, notes) and `settings/main`
-  (follow-up threshold, ignored schedule suggestions). Row-level security allows only the shared login.
+  (follow-up threshold, ignored schedule suggestions). Row-level security allows only the BD login.
 - The Jobsite Schedule's table `sched_docs` (collections `items`, `projects`) is **read only** from here.
   Never write to it from this page.
 - This repo is public. Never commit contact lists, exports or any real contact data. `.gitignore`

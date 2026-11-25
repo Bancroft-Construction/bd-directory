@@ -3,13 +3,17 @@
 Bancroft Construction's architect & designer directory, with a business development calendar, a priority
 follow-up list, and last-contact dates picked up automatically from the Jobsite Schedule Board.
 
-It uses the **Jobsite Schedule's sign-in**: same password, and signing in on any Bancroft tool signs you
-in to all of them in that browser tab. Everyone then types their name. No password is stored in this repo.
+It has its **own password**, separate from the Jobsite Schedule's: the Supabase login
+`bd@bancroftconstruction.com`. Signing in to the other Bancroft tools does not open it. Everyone then
+types their name. No password is stored in this repo.
 
 ## One-time setup (Supabase: the schedule board's project)
 
-1. **Create the table.** SQL Editor → paste and run `supabase/setup.sql`.
-2. **Import the master list.** Open the page, sign in, **Import list**, choose the Excel file, check the
+1. **Create the BD login.** Authentication → Users → Add user → Create new user: email
+   `bd@bancroftconstruction.com`, a password of your choice, and tick **Auto Confirm User**.
+2. **Create the table.** SQL Editor → paste and run `supabase/setup.sql`. Then run
+   `jobsite-schedule/supabase/setup.sql` too, so the BD login can read the schedule but not change it.
+3. **Import the master list.** Open the page, sign in, **Import list**, choose the Excel file, check the
    preview, click Import. The list itself is never uploaded to GitHub.
 
 ## Using it
