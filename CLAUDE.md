@@ -41,3 +41,9 @@ Text boxes with suggestions (Who on events, Firm, How) use the page's own `typea
 Open `index.html?demo` through a local web server: made-up contacts and schedule tasks in memory,
 no sign-in, nothing saved. The shared top bar (`/nav.js`) comes from the bancroft-construction.github.io
 repo, so serve that repo at the root to see it.
+
+## Brand colors and chart colors
+
+The page uses the Bancroft brand palette (Marble #FFFCFA, Stone #E7E3DD, Copper #8A5D3B, Granite #252928) in
+the `:root` variables. The calendar grid (`.cal`) is the exception: it stays white with traditional colors
+(blue events, green logged contacts, gray schedule tasks, red today) in light and dark mode.
